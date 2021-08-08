@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  rabbitmqServer:
+    container_name: rabbitmqServer
+    image: "rabbitmq:3.6-management-alpine"
+    hostname: "rabbitmq-host"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "pass"
+    networks:
+      - rabbitnetwork
+
+  producer:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: producer
+    depends_on:
+      - rabbitmqServer
+      - receiver
+    ports:
+      - 7000:7000
+    environment:
+      RABBITMQ_USERNAME: "admin"
+      RABBITMQ_PASSSWORD: "pass"
+      RABBITMQ_HOST: rabbitmqServer
+      RABBITMQ_QUEUE: dataqueue
+      RABBITMQ_ROUTING_KEY: dataqueue 
+      RABBITMQ_EXCHANGE: exchange_test
+      SERVER_PORT: 7000
+      SERVER_HOST: receiver
+    networks:
+      - rabbitnetwork
+    restart: always
+    # healthcheck:
+    #   interval: 10s
+    #   timeout: 5s
+
+  receiver:
+    container_name: receiver
+    build:
+      context: ./receiver
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - rabbitmqServer
+    ports:
+      - 8000:8000
+    environment:
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSSWORD: pass
+      RABBITMQ_HOST: rabbitmqServer
+      RABBITMQ_QUEUE: dataqueue
+      RABBITMQ_ROUTING_KEY: dataqueue 
+      RABBITMQ_EXCHANGE: exchange_test
+    networks:
+      - rabbitnetwork
+
+networks:
+  rabbitnetwork:
+    driver: bridge
