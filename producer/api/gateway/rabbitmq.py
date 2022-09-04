@@ -48,6 +48,7 @@ class RabbitMQ():
         """
         :param message: message to be publish in JSON format
         """
+        self.create_channel()
 
         self._channel.basic_publish(
             exchange=self._exchange,
